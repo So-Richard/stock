@@ -31,6 +31,7 @@
         .swal2-icon { border-color: #f9a8d4 !important; color: #f472b6 !important; }
         .swal2-icon.swal2-success { border-color: #a7f3d0 !important; color: #34d399 !important; }
         .swal2-icon.swal2-info { border-color: #bae6fd !important; color: #38bdf8 !important; }
+        .swal2-icon.swal2-question { border-color: #a5f3fc !important; color: #06b6d4 !important; }
         
         /* สกอร์บาร์ */
         ::-webkit-scrollbar { width: 6px; }
@@ -41,23 +42,26 @@
 <body class="text-gray-700 min-h-screen flex flex-col">
 
     <nav class="bg-soPink-400 text-white shadow-md sticky top-0 z-50">
-        <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
+        <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
             <div class="flex items-center gap-3 text-xl md:text-2xl font-semibold">
                 <img src="https://img2.pic.in.th/So-ss.png" alt="So-Stock Logo" class="h-10 w-10 object-cover rounded-full border-2 border-white shadow-sm bg-white">
-                So-Stock
+                <span class="hidden md:inline">So-Stock</span>
             </div>
-            <div class="flex gap-2 md:gap-4">
-                <button onclick="switchPage('form')" id="btn-nav-form" class="bg-white text-soPink-500 px-4 py-2 rounded-full text-sm md:text-base font-medium shadow transition hover:bg-soPink-100 flex items-center gap-2">
+            <div class="flex gap-2">
+                <button onclick="switchPage('form')" id="btn-nav-form" class="bg-white text-soPink-500 px-3 py-2 md:px-4 rounded-full text-sm md:text-base font-medium shadow transition hover:bg-soPink-100 flex items-center gap-2">
                     <i class="fa-solid fa-plus-circle"></i> <span class="hidden md:inline">เพิ่มสินค้า</span>
                 </button>
-                <button onclick="switchPage('history')" id="btn-nav-history" class="bg-soPink-500 text-white px-4 py-2 rounded-full text-sm md:text-base font-medium shadow transition hover:bg-soPink-600 flex items-center gap-2">
+                <button onclick="switchPage('stock')" id="btn-nav-stock" class="bg-soPink-500 text-white px-3 py-2 md:px-4 rounded-full text-sm md:text-base font-medium shadow transition hover:bg-soPink-600 flex items-center gap-2">
+                    <i class="fa-solid fa-box-open"></i> <span class="hidden md:inline">สต๊อกว่าง</span>
+                </button>
+                <button onclick="switchPage('history')" id="btn-nav-history" class="bg-soPink-500 text-white px-3 py-2 md:px-4 rounded-full text-sm md:text-base font-medium shadow transition hover:bg-soPink-600 flex items-center gap-2">
                     <i class="fa-solid fa-clock-rotate-left"></i> <span class="hidden md:inline">ประวัติ</span>
                 </button>
             </div>
         </div>
     </nav>
 
-    <main class="flex-grow max-w-5xl mx-auto w-full p-4 md:p-6">
+    <main class="flex-grow max-w-6xl mx-auto w-full p-4 md:p-6">
         
         <section id="page-form" class="fade-in max-w-2xl mx-auto">
             <div class="bg-white rounded-3xl shadow-xl p-6 md:p-8 border-t-8 border-soPink-400">
@@ -140,14 +144,36 @@
             </div>
         </section>
 
+        <section id="page-stock" class="hidden">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                    <i class="fa-solid fa-box-open text-soCyan-500"></i> สินค้าในสต๊อก (พร้อมขาย)
+                </h2>
+                <div class="w-full md:w-auto flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm border border-soCyan-100">
+                    <i class="fa-solid fa-filter text-soCyan-400"></i>
+                    <select id="filterStockCategory" onchange="renderStock()" class="w-full md:w-48 bg-transparent focus:outline-none text-gray-700 font-medium">
+                        <option value="all">ทุกหมวดหมู่</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="loadingStock" class="text-center py-10 hidden">
+                <i class="fa-solid fa-spinner fa-spin text-4xl text-soCyan-300 mb-3"></i>
+                <p class="text-gray-500 font-medium">กำลังโหลดข้อมูลโปรดรอสักครู่</p>
+            </div>
+
+            <div id="stockGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                </div>
+        </section>
+
         <section id="page-history" class="hidden">
             <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                 <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                    <i class="fa-solid fa-list-check text-soPink-500"></i> ประวัติรายการ
+                    <i class="fa-solid fa-clock-rotate-left text-soPink-500"></i> ประวัติรายการที่ขายแล้ว
                 </h2>
                 <div class="w-full md:w-auto flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm border border-soPink-100">
                     <i class="fa-solid fa-filter text-soPink-400"></i>
-                    <select id="filterCategory" onchange="renderHistory()" class="w-full md:w-48 bg-transparent focus:outline-none text-gray-700 font-medium">
+                    <select id="filterHistoryCategory" onchange="renderHistory()" class="w-full md:w-48 bg-transparent focus:outline-none text-gray-700 font-medium">
                         <option value="all">ทุกหมวดหมู่</option>
                     </select>
                 </div>
@@ -166,34 +192,33 @@
     <script>
         // ใช้ URL API ที่เชื่อมกับ Google Sheet ของคุณ
         const API_URL = "https://script.google.com/macros/s/AKfycbxdMsZ8al4RmNhhYNBRIrOARkdlf8ZavsCvkP3rPzBRcBSyArWHL-usoZkIOeTlhxxu/exec";
-        let historyData = [];
+        let allData = [];
 
         // ----- ฟังก์ชันควบคุมหน้าจอ -----
         function switchPage(page) {
-            const formPage = document.getElementById('page-form');
-            const historyPage = document.getElementById('page-history');
-            const btnForm = document.getElementById('btn-nav-form');
-            const btnHist = document.getElementById('btn-nav-history');
+            const pages = ['form', 'stock', 'history'];
+            
+            pages.forEach(p => {
+                // ซ่อนทุกหน้า
+                document.getElementById(`page-${p}`).classList.add('hidden');
+                
+                // รีเซ็ตปุ่มทั้งหมดให้เป็นสีไม่ใช้งาน (เทา/ชมพูอ่อน)
+                const btn = document.getElementById(`btn-nav-${p}`);
+                btn.classList.remove('bg-soPink-500', 'text-white');
+                btn.classList.add('bg-white', 'text-soPink-500');
+            });
 
-            if (page === 'form') {
-                formPage.classList.remove('hidden');
-                historyPage.classList.add('hidden');
-                
-                btnForm.classList.replace('bg-soPink-500', 'bg-white');
-                btnForm.classList.replace('text-white', 'text-soPink-500');
-                btnHist.classList.replace('bg-white', 'bg-soPink-500');
-                btnHist.classList.replace('text-soPink-500', 'text-white');
-            } else {
-                formPage.classList.add('hidden');
-                historyPage.classList.remove('hidden');
-                
-                btnHist.classList.replace('bg-soPink-500', 'bg-white');
-                btnHist.classList.replace('text-white', 'text-soPink-500');
-                btnForm.classList.replace('bg-white', 'bg-soPink-500');
-                btnForm.classList.replace('text-soPink-500', 'text-white');
-                
-                loadHistory();
-            }
+            // แสดงหน้าที่เลือก
+            document.getElementById(`page-${page}`).classList.remove('hidden');
+            
+            // เปลี่ยนสีปุ่มที่เลือกให้เด่น
+            const activeBtn = document.getElementById(`btn-nav-${page}`);
+            activeBtn.classList.remove('bg-white', 'text-soPink-500');
+            activeBtn.classList.add('bg-soPink-500', 'text-white');
+
+            // หากเปิดหน้าสต๊อกหรือประวัติ ให้โหลดข้อมูล
+            if (page === 'stock') loadData('stock');
+            if (page === 'history') loadData('history');
         }
 
         function toggleFields() {
@@ -299,9 +324,13 @@
             }
         }
 
-        async function loadHistory() {
-            document.getElementById('historyGrid').innerHTML = '';
-            document.getElementById('loadingHistory').classList.remove('hidden');
+        async function loadData(targetPage) {
+            // แสดง Loading ของหน้าที่กำลังเปิด
+            const loadingId = targetPage === 'stock' ? 'loadingStock' : 'loadingHistory';
+            const gridId = targetPage === 'stock' ? 'stockGrid' : 'historyGrid';
+            
+            document.getElementById(gridId).innerHTML = '';
+            document.getElementById(loadingId).classList.remove('hidden');
             
             try {
                 const response = await fetch(API_URL, {
@@ -310,60 +339,146 @@
                     body: JSON.stringify({ action: "getItems" })
                 });
                 const res = await response.json();
-                document.getElementById('loadingHistory').classList.add('hidden');
+                
+                document.getElementById(loadingId).classList.add('hidden');
                 
                 if (res.success) {
-                    historyData = res.data;
+                    allData = res.data;
                     updateFilterOptions();
-                    renderHistory();
+                    
+                    // Render ตามหน้าที่เปิด
+                    if (targetPage === 'stock') renderStock();
+                    if (targetPage === 'history') renderHistory();
                 }
             } catch (err) {
-                document.getElementById('loadingHistory').classList.add('hidden');
+                document.getElementById(loadingId).classList.add('hidden');
                 Swal.fire({ icon: 'error', title: 'ดึงข้อมูลไม่สำเร็จ', text: err.message });
             }
         }
 
         function updateFilterOptions() {
-            const filter = document.getElementById('filterCategory');
-            const categories = [...new Set(historyData.map(item => item.Category))];
+            const stockFilter = document.getElementById('filterStockCategory');
+            const historyFilter = document.getElementById('filterHistoryCategory');
             
-            filter.innerHTML = '<option value="all">ทุกหมวดหมู่</option>';
+            const categories = [...new Set(allData.map(item => item.Category))];
+            
+            let options = '<option value="all">ทุกหมวดหมู่</option>';
             categories.forEach(cat => {
-                if(cat) filter.innerHTML += `<option value="${cat}">${cat}</option>`;
+                if(cat) options += `<option value="${cat}">${cat}</option>`;
             });
+
+            stockFilter.innerHTML = options;
+            historyFilter.innerHTML = options;
         }
 
-        function renderHistory() {
-            const filterValue = document.getElementById('filterCategory').value;
-            const grid = document.getElementById('historyGrid');
+        // --- ระบบ Render หน้าสต๊อกว่าง (เฉพาะ 'พร้อมขาย') ---
+        function renderStock() {
+            const filterValue = document.getElementById('filterStockCategory').value;
+            const grid = document.getElementById('stockGrid');
             grid.innerHTML = '';
 
-            const filteredData = filterValue === 'all' ? historyData : historyData.filter(item => item.Category === filterValue);
+            // กรองเฉพาะสถานะ 'พร้อมขาย'
+            let filteredData = allData.filter(item => item.Status === 'พร้อมขาย');
+            
+            // กรองหมวดหมู่
+            if (filterValue !== 'all') {
+                filteredData = filteredData.filter(item => item.Category === filterValue);
+            }
 
             if (filteredData.length === 0) {
-                grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-400 bg-white rounded-3xl border border-dashed border-soPink-200">
-                                    <div class="inline-flex items-center justify-center w-20 h-20 bg-soPink-50 text-soPink-300 rounded-full mb-4">
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-400 bg-white rounded-3xl border border-dashed border-soCyan-200">
+                                    <div class="inline-flex items-center justify-center w-20 h-20 bg-soCyan-50 text-soCyan-300 rounded-full mb-4">
                                         <i class="fa-solid fa-box-open text-4xl"></i>
                                     </div>
-                                    <h3 class="text-xl font-semibold text-gray-600">ไม่มีข้อมูลรายการ</h3>
-                                    <p class="text-sm mt-1">ยังไม่มีสินค้าในหมวดหมู่นี้</p>
+                                    <h3 class="text-xl font-semibold text-gray-600">สต๊อกว่างเปล่า</h3>
+                                    <p class="text-sm mt-1">ไม่มีสินค้าในสต๊อกรอขาย</p>
                                   </div>`;
                 return;
             }
 
             filteredData.forEach(item => {
-                const isReady = item.Status === 'พร้อมขาย';
+                const card = `
+                    <div class="bg-white rounded-3xl shadow-sm border border-soCyan-100 p-5 hover:shadow-lg transition duration-300 relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 w-20 h-20 bg-soCyan-50 rounded-bl-full -z-0 transition-transform group-hover:scale-110"></div>
+                        
+                        <div class="flex justify-between items-start mb-4 relative z-10">
+                            <div>
+                                <h3 class="font-bold text-lg text-gray-800">${item.Category}</h3>
+                                <p class="text-xs text-soCyan-600 font-medium bg-white px-2 py-1 rounded-md inline-block shadow-sm border border-gray-100 mt-1">
+                                    <i class="fa-solid fa-tag"></i> ${item.Type} &bull; ${item.Duration}
+                                </p>
+                            </div>
+                            <span class="bg-soCyan-100 text-soCyan-600 px-3 py-1 rounded-full text-xs font-semibold shadow-sm"><i class="fa-solid fa-box"></i> พร้อมขาย</span>
+                        </div>
+
+                        <div class="space-y-3 text-sm text-gray-600 relative z-10">
+                            <div class="flex items-center gap-3 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400"><i class="fa-solid fa-envelope"></i></div>
+                                <p class="truncate font-medium">${item.Email}</p>
+                            </div>
+                            
+                            ${item.Password && item.Password !== '-' ? `
+                            <div class="flex items-center gap-3 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400"><i class="fa-solid fa-key"></i></div>
+                                <p class="truncate font-medium">${item.Password}</p>
+                            </div>` : ''}
+                            
+                            ${item.Details && item.Details !== '-' ? `
+                            <p class="text-xs text-gray-500 px-1 pt-1"><i class="fa-solid fa-file-lines text-gray-400 mr-1"></i> ${item.Details}</p>` : ''}
+                            
+                            <div class="bg-soCyan-50/50 p-3.5 rounded-xl mt-4 space-y-2 border border-soCyan-100">
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="text-gray-500"><i class="fa-regular fa-calendar-plus w-4 text-soCyan-500"></i> วันที่นำเข้าสต๊อก</span>
+                                    <span class="font-medium text-gray-700">${formatDate(item.DateAdded)}</span>
+                                </div>
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="font-medium text-soCyan-600"><i class="fa-regular fa-calendar-xmark w-4"></i> วันหมดอายุ</span>
+                                    <span class="font-semibold text-soCyan-600">(เริ่มนับเมื่อกดขาย)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button onclick="markSold('${item.ID}', '${item.Duration}')" class="w-full mt-4 bg-soCyan-500 text-white hover:bg-soCyan-600 py-3 rounded-xl text-sm font-semibold transition shadow-md flex justify-center items-center gap-2"><i class="fa-solid fa-cart-shopping"></i> กดปุ่มนี้เมื่อขายแล้ว</button>
+                    </div>
+                `;
+                grid.innerHTML += card;
+            });
+        }
+
+        // --- ระบบ Render หน้าประวัติ (เฉพาะ 'ใช้งานปกติ' และ 'เคลมแล้ว') ---
+        function renderHistory() {
+            const filterValue = document.getElementById('filterHistoryCategory').value;
+            const grid = document.getElementById('historyGrid');
+            grid.innerHTML = '';
+
+            // กรองเอาเฉพาะที่ขายแล้ว หรือเคลมแล้ว (ตัด 'พร้อมขาย' ออก)
+            let filteredData = allData.filter(item => item.Status !== 'พร้อมขาย');
+            
+            // กรองหมวดหมู่
+            if (filterValue !== 'all') {
+                filteredData = filteredData.filter(item => item.Category === filterValue);
+            }
+
+            if (filteredData.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-400 bg-white rounded-3xl border border-dashed border-soPink-200">
+                                    <div class="inline-flex items-center justify-center w-20 h-20 bg-soPink-50 text-soPink-300 rounded-full mb-4">
+                                        <i class="fa-solid fa-folder-open text-4xl"></i>
+                                    </div>
+                                    <h3 class="text-xl font-semibold text-gray-600">ไม่มีประวัติการขาย</h3>
+                                    <p class="text-sm mt-1">ยังไม่มีสินค้าถูกขายในหมวดหมู่นี้</p>
+                                  </div>`;
+                return;
+            }
+
+            filteredData.forEach(item => {
                 const isNormal = item.Status === 'ใช้งานปกติ';
                 
-                let statusBadge = '';
-                if(isReady) statusBadge = `<span class="bg-soCyan-100 text-soCyan-600 px-3 py-1 rounded-full text-xs font-semibold shadow-sm"><i class="fa-solid fa-box"></i> พร้อมขาย</span>`;
-                else if(isNormal) statusBadge = `<span class="bg-green-100 text-green-600 px-3 py-1 rounded-full text-xs font-semibold shadow-sm"><i class="fa-solid fa-check-circle"></i> ใช้งานปกติ</span>`;
-                else statusBadge = `<span class="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold shadow-sm"><i class="fa-solid fa-rotate"></i> เคลมแล้ว</span>`;
+                const statusBadge = isNormal 
+                    ? `<span class="bg-green-100 text-green-600 px-3 py-1 rounded-full text-xs font-semibold shadow-sm"><i class="fa-solid fa-check-circle"></i> ใช้งานปกติ</span>`
+                    : `<span class="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold shadow-sm"><i class="fa-solid fa-rotate"></i> เคลมแล้ว</span>`;
 
                 let actionBtn = '';
-                if(isReady) {
-                    actionBtn = `<button onclick="markSold('${item.ID}', '${item.Duration}')" class="w-full mt-4 bg-soCyan-500 text-white hover:bg-soCyan-600 py-3 rounded-xl text-sm font-semibold transition shadow-md flex justify-center items-center gap-2"><i class="fa-solid fa-cart-shopping"></i> กดเปลี่ยนเป็นขายแล้ว</button>`;
-                } else if(isNormal) {
+                if(isNormal) {
                     actionBtn = `<button onclick="claimItem('${item.ID}')" class="w-full mt-4 bg-white border-2 border-soPink-400 text-soPink-500 hover:bg-soPink-400 hover:text-white py-2.5 rounded-xl text-sm font-semibold transition flex justify-center items-center gap-2"><i class="fa-solid fa-rotate"></i> แจ้งเคลมสินค้า</button>`;
                 } else {
                     actionBtn = `<div class="mt-4 p-3 bg-gray-50 rounded-xl text-xs text-gray-500 border border-gray-200">
@@ -371,16 +486,14 @@
                        </div>`;
                 }
 
-                const expiryText = isReady ? `<span class="text-soCyan-600 font-medium">(เริ่มนับเมื่อกดขาย)</span>` : formatDate(item.ExpiryDate);
-
                 const card = `
                     <div class="bg-white rounded-3xl shadow-sm border border-soPink-100 p-5 hover:shadow-lg transition duration-300 relative overflow-hidden group">
-                        <div class="absolute top-0 right-0 w-20 h-20 ${isReady ? 'bg-soCyan-50' : 'bg-soPink-50'} rounded-bl-full -z-0 transition-transform group-hover:scale-110"></div>
+                        <div class="absolute top-0 right-0 w-20 h-20 bg-soPink-50 rounded-bl-full -z-0 transition-transform group-hover:scale-110"></div>
                         
                         <div class="flex justify-between items-start mb-4 relative z-10">
                             <div>
                                 <h3 class="font-bold text-lg text-gray-800">${item.Category}</h3>
-                                <p class="text-xs ${isReady ? 'text-soCyan-600' : 'text-soPink-500'} font-medium bg-white px-2 py-1 rounded-md inline-block shadow-sm border border-gray-100 mt-1">
+                                <p class="text-xs text-soPink-500 font-medium bg-white px-2 py-1 rounded-md inline-block shadow-sm border border-gray-100 mt-1">
                                     <i class="fa-solid fa-tag"></i> ${item.Type} &bull; ${item.Duration}
                                 </p>
                             </div>
@@ -402,14 +515,14 @@
                             ${item.Details && item.Details !== '-' ? `
                             <p class="text-xs text-gray-500 px-1 pt-1"><i class="fa-solid fa-file-lines text-gray-400 mr-1"></i> ${item.Details}</p>` : ''}
                             
-                            <div class="${isReady ? 'bg-soCyan-50/50' : 'bg-soPink-50/50'} p-3.5 rounded-xl mt-4 space-y-2 border ${isReady ? 'border-soCyan-100' : 'border-soPink-100'}">
+                            <div class="bg-soPink-50/50 p-3.5 rounded-xl mt-4 space-y-2 border border-soPink-100">
                                 <div class="flex justify-between items-center text-xs">
-                                    <span class="text-gray-500"><i class="fa-regular fa-calendar-plus w-4 ${isReady ? 'text-soCyan-500' : 'text-soPink-400'}"></i> ${isReady ? 'วันที่นำเข้าสต๊อก' : 'วันที่เริ่มใช้งาน'}</span>
+                                    <span class="text-gray-500"><i class="fa-regular fa-calendar-plus w-4 text-soPink-400"></i> วันที่เริ่มใช้งาน</span>
                                     <span class="font-medium text-gray-700">${formatDate(item.DateAdded)}</span>
                                 </div>
                                 <div class="flex justify-between items-center text-xs">
-                                    <span class="font-medium ${isReady ? 'text-soCyan-600' : 'text-soPink-600'}"><i class="fa-regular fa-calendar-xmark w-4"></i> วันหมดอายุ</span>
-                                    <span class="font-semibold ${isReady ? 'text-soCyan-600' : 'text-soPink-600'}">${expiryText}</span>
+                                    <span class="font-medium text-soPink-600"><i class="fa-regular fa-calendar-xmark w-4"></i> วันหมดอายุ</span>
+                                    <span class="font-semibold text-soPink-600">${formatDate(item.ExpiryDate)}</span>
                                 </div>
                             </div>
                         </div>
@@ -455,8 +568,8 @@
                         });
                         const res = await response.json();
                         if(res.success){
-                            Swal.fire('สำเร็จ', 'สถานะเปลี่ยนเป็นใช้งานปกติ และเริ่มนับเวลาแล้ว', 'success');
-                            loadHistory(); 
+                            Swal.fire('สำเร็จ', 'ย้ายไปหน้าประวัติแล้ว และระบบเริ่มนับเวลาตั้งแต่วันนี้', 'success');
+                            loadData('stock'); // โหลดหน้าสต๊อกใหม่
                         } else {
                             Swal.fire('ข้อผิดพลาด', res.message, 'error');
                         }
@@ -501,7 +614,7 @@
                         const res = await response.json();
                         if(res.success){
                             Swal.fire('สำเร็จ', 'อัปเดตสถานะการเคลมเรียบร้อยแล้ว', 'success');
-                            loadHistory(); 
+                            loadData('history'); // โหลดหน้าประวัติใหม่
                         } else {
                             Swal.fire('ข้อผิดพลาด', res.message, 'error');
                         }
@@ -514,6 +627,7 @@
 
         // โหลดค่าตั้งต้นเมื่อเปิดหน้าเว็บ
         toggleFields();
+        // เริ่มต้นด้วยหน้า Form อัตโนมัติ (ไม่โหลด API จนกว่าจะกดแท็บอื่น)
     </script>
 </body>
 </html>
