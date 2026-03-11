@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>So-Stock | ระบบจัดการสต็อก</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Prompt', 'sans-serif'] },
+                    colors: {
+                        soPink: { 50: '#fdf2f8', 100: '#fce7f3', 300: '#f9a8d4', 400: '#f472b6', 500: '#ec4899', 600: '#db2777' },
+                        soCyan: { 50: '#ecfeff', 100: '#cffafe', 400: '#22d3ee', 500: '#06b6d4', 600: '#0891b2' }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #fdf2f8; }
+        /* การตั้งค่า SweetAlert ให้น่ารักและเข้ากับธีม */
+        .swal2-popup { border-radius: 1.5rem !important; font-family: 'Prompt', sans-serif !important; }
+        .swal2-confirm { background-color: #f472b6 !important; border-radius: 9999px !important; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important; font-weight: 500 !important; }
+        .swal2-cancel { border-radius: 9999px !important; font-weight: 500 !important; }
+        .swal2-icon { border-color: #f9a8d4 !important; color: #f472b6 !important; }
+        .swal2-icon.swal2-success { border-color: #a7f3d0 !important; color: #34d399 !important; }
+        .swal2-icon.swal2-info { border-color: #bae6fd !important; color: #38bdf8 !important; }
+        
+        /* สกอร์บาร์ */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #f9a8d4; border-radius: 10px; }
+    </style>
+</head>
+<body class="text-gray-700 min-h-screen flex flex-col">
+
+    <nav class="bg-soPink-400 text-white shadow-md sticky top-0 z-50">
+        <div class="max-w-5xl mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-3 text-xl md:text-2xl font-semibold">
+                <img src="https://img2.pic.in.th/So-ss.png" alt="So-Stock Logo" class="h-10 w-10 object-cover rounded-full border-2 border-white shadow-sm bg-white">
+                So-Stock
+            </div>
+            <div class="flex gap-2 md:gap-4">
+                <button onclick="switchPage('form')" id="btn-nav-form" class="bg-white text-soPink-500 px-4 py-2 rounded-full text-sm md:text-base font-medium shadow transition hover:bg-soPink-100 flex items-center gap-2">
+                    <i class="fa-solid fa-plus-circle"></i> <span class="hidden md:inline">เพิ่มสินค้า</span>
+                </button>
+                <button onclick="switchPage('history')" id="btn-nav-history" class="bg-soPink-500 text-white px-4 py-2 rounded-full text-sm md:text-base font-medium shadow transition hover:bg-soPink-600 flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left"></i> <span class="hidden md:inline">ประวัติ</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow max-w-5xl mx-auto w-full p-4 md:p-6">
+        
+        <section id="page-form" class="fade-in max-w-2xl mx-auto">
+            <div class="bg-white rounded-3xl shadow-xl p-6 md:p-8 border-t-8 border-soPink-400">
+                <div class="text-center mb-6">
+                    <img src="https://img2.pic.in.th/So-ss.png" alt="So-Stock" class="w-20 h-20 mx-auto rounded-full border-4 border-soPink-100 shadow-sm mb-3">
+                    <h2 class="text-2xl font-bold text-gray-800">ลงข้อมูลสินค้าใหม่</h2>
+                </div>
+
+                <form id="stockForm" onsubmit="submitForm(event)" class="space-y-5">
+                    
+                    <div class="bg-soPink-50 p-4 rounded-xl border border-soPink-100">
+                        <label class="block text-sm font-medium text-gray-700 mb-2"><i class="fa-solid fa-boxes-stacked text-soPink-400"></i> สถานะตอนลง</label>
+                        <div class="flex flex-col md:flex-row gap-4">
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="initialStatus" value="พร้อมขาย" class="w-4 h-4 text-soPink-500 focus:ring-soPink-400 border-gray-300" checked>
+                                <span class="text-gray-700 font-medium">ลงเป็นสต๊อกว่าง (รอขาย)</span>
+                            </label>
+                            <label class="flex items-center gap-2 cursor-pointer">
+                                <input type="radio" name="initialStatus" value="ใช้งานปกติ" class="w-4 h-4 text-soPink-500 focus:ring-soPink-400 border-gray-300">
+                                <span class="text-gray-700 font-medium">เปิดใช้งานเลย (เริ่มนับวัน)</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fa-solid fa-tag text-soPink-400"></i> รูปแบบ</label>
+                        <select id="type" onchange="toggleFields()" class="w-full border-2 border-soPink-100 rounded-xl px-4 py-3 focus:outline-none focus:border-soPink-400 transition bg-gray-50 text-gray-700" required>
+                            <option value="ส่วนตัว">ส่วนตัว</option>
+                            <option value="หาร">หาร</option>
+                            <option value="เมลลูกค้า">เมลลูกค้า</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fa-solid fa-layer-group text-soPink-400"></i> หมวดหมู่</label>
+                        <select id="categorySelect" onchange="toggleCustomCategory()" class="w-full border-2 border-soPink-100 rounded-xl px-4 py-3 focus:outline-none focus:border-soPink-400 transition bg-gray-50 text-gray-700" required>
+                            <option value="ChatGPT">ChatGPT</option>
+                            <option value="CapCut">CapCut</option>
+                            <option value="Canva">Canva</option>
+                            <option value="Gemini">Gemini</option>
+                            <option value="custom">เพิ่มหมวดหมู่เอง...</option>
+                        </select>
+                        <input type="text" id="customCategory" placeholder="ระบุหมวดหมู่ใหม่" class="hidden w-full mt-2 border-2 border-soPink-100 rounded-xl px-4 py-3 focus:outline-none focus:border-soPink-400 bg-white" />
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fa-solid fa-hourglass-half text-soPink-400"></i> อายุการใช้งาน</label>
+                            <input type="number" id="durationNum" min="1" class="w-full border-2 border-soPink-100 rounded-xl px-4 py-3 focus:outline-none focus:border-soPink-400 bg-gray-50" placeholder="ระบุตัวเลข" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">&nbsp;</label>
+                            <select id="durationUnit" class="w-full border-2 border-soPink-100 rounded-xl px-4 py-3 focus:outline-none focus:border-soPink-400 bg-gray-50 text-gray-700" required>
+                                <option value="วัน">วัน</option>
+                                <option value="เดือน">เดือน</option>
+                                <option value="ปี">ปี</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fa-solid fa-envelope text-soPink-400"></i> อีเมล</label>
+                        <input type="email" id="email" class="w-full border-2 border-soPink-100 rounded-xl px-4 py-3 focus:outline-none focus:border-soPink-400 bg-gray-50" placeholder="example@email.com" required>
+                    </div>
+
+                    <div id="passwordContainer">
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fa-solid fa-lock text-soPink-400"></i> รหัสผ่าน</label>
+                        <input type="text" id="password" class="w-full border-2 border-soPink-100 rounded-xl px-4 py-3 focus:outline-none focus:border-soPink-400 bg-gray-50" placeholder="รหัสผ่านเข้าใช้งาน">
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1"><i class="fa-solid fa-file-lines text-soPink-400"></i> รายละเอียดเพิ่มเติม (ไม่บังคับ)</label>
+                        <textarea id="details" rows="2" class="w-full border-2 border-soPink-100 rounded-xl px-4 py-3 focus:outline-none focus:border-soPink-400 bg-gray-50" placeholder="หมายเหตุเพิ่มเติม..."></textarea>
+                    </div>
+
+                    <button type="submit" class="w-full bg-soPink-400 hover:bg-soPink-500 text-white font-semibold py-4 rounded-xl shadow-lg transition duration-300 flex items-center justify-center gap-2 text-lg">
+                        <i class="fa-solid fa-check-circle"></i> ยืนยันข้อมูล
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <section id="page-history" class="hidden">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
+                <h2 class="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                    <i class="fa-solid fa-list-check text-soPink-500"></i> ประวัติรายการ
+                </h2>
+                <div class="w-full md:w-auto flex items-center gap-2 bg-white px-4 py-2 rounded-xl shadow-sm border border-soPink-100">
+                    <i class="fa-solid fa-filter text-soPink-400"></i>
+                    <select id="filterCategory" onchange="renderHistory()" class="w-full md:w-48 bg-transparent focus:outline-none text-gray-700 font-medium">
+                        <option value="all">ทุกหมวดหมู่</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="loadingHistory" class="text-center py-10 hidden">
+                <i class="fa-solid fa-spinner fa-spin text-4xl text-soPink-300 mb-3"></i>
+                <p class="text-gray-500 font-medium">กำลังโหลดข้อมูลโปรดรอสักครู่</p>
+            </div>
+
+            <div id="historyGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                </div>
+        </section>
+    </main>
+
+    <script>
+        // ใช้ URL API ที่เชื่อมกับ Google Sheet ของคุณ
+        const API_URL = "https://script.google.com/macros/s/AKfycbxdMsZ8al4RmNhhYNBRIrOARkdlf8ZavsCvkP3rPzBRcBSyArWHL-usoZkIOeTlhxxu/exec";
+        let historyData = [];
+
+        // ----- ฟังก์ชันควบคุมหน้าจอ -----
+        function switchPage(page) {
+            const formPage = document.getElementById('page-form');
+            const historyPage = document.getElementById('page-history');
+            const btnForm = document.getElementById('btn-nav-form');
+            const btnHist = document.getElementById('btn-nav-history');
+
+            if (page === 'form') {
+                formPage.classList.remove('hidden');
+                historyPage.classList.add('hidden');
+                
+                btnForm.classList.replace('bg-soPink-500', 'bg-white');
+                btnForm.classList.replace('text-white', 'text-soPink-500');
+                btnHist.classList.replace('bg-white', 'bg-soPink-500');
+                btnHist.classList.replace('text-soPink-500', 'text-white');
+            } else {
+                formPage.classList.add('hidden');
+                historyPage.classList.remove('hidden');
+                
+                btnHist.classList.replace('bg-soPink-500', 'bg-white');
+                btnHist.classList.replace('text-white', 'text-soPink-500');
+                btnForm.classList.replace('bg-white', 'bg-soPink-500');
+                btnForm.classList.replace('text-soPink-500', 'text-white');
+                
+                loadHistory();
+            }
+        }
+
+        function toggleFields() {
+            const type = document.getElementById('type').value;
+            const passContainer = document.getElementById('passwordContainer');
+            const passInput = document.getElementById('password');
+            if (type === 'เมลลูกค้า') {
+                passContainer.style.display = 'none';
+                passInput.value = '';
+                passInput.removeAttribute('required');
+            } else {
+                passContainer.style.display = 'block';
+                passInput.setAttribute('required', 'true');
+            }
+        }
+
+        function toggleCustomCategory() {
+            const select = document.getElementById('categorySelect').value;
+            const customInput = document.getElementById('customCategory');
+            if (select === 'custom') {
+                customInput.classList.remove('hidden');
+                customInput.setAttribute('required', 'true');
+            } else {
+                customInput.classList.add('hidden');
+                customInput.removeAttribute('required');
+            }
+        }
+
+        // ----- ฟังก์ชันการคำนวณและ API -----
+        function formatDate(date) {
+            const d = new Date(date);
+            return d.toLocaleDateString('th-TH', { year: 'numeric', month: 'short', day: 'numeric' });
+        }
+
+        function calculateExpiry(num, unit) {
+            let d = new Date();
+            num = parseInt(num);
+            if (unit === 'วัน') d.setDate(d.getDate() + num);
+            else if (unit === 'เดือน') d.setMonth(d.getMonth() + num);
+            else if (unit === 'ปี') d.setFullYear(d.getFullYear() + num);
+            return d;
+        }
+
+        async function submitForm(e) {
+            e.preventDefault();
+            
+            const catSelect = document.getElementById('categorySelect').value;
+            const category = catSelect === 'custom' ? document.getElementById('customCategory').value : catSelect;
+            const durationNum = document.getElementById('durationNum').value;
+            const durationUnit = document.getElementById('durationUnit').value;
+            const durationStr = `${durationNum} ${durationUnit}`;
+            const statusVal = document.querySelector('input[name="initialStatus"]:checked').value;
+            
+            const addedDate = new Date();
+            const expiryDate = calculateExpiry(durationNum, durationUnit);
+
+            const payload = {
+                action: "insert",
+                type: document.getElementById('type').value,
+                category: category,
+                duration: durationStr,
+                email: document.getElementById('email').value,
+                password: document.getElementById('password').value,
+                details: document.getElementById('details').value,
+                dateAdded: addedDate.toISOString(),
+                expiryDate: expiryDate.toISOString(),
+                status: statusVal
+            };
+
+            Swal.fire({
+                title: 'กำลังบันทึกข้อมูล',
+                text: 'โปรดรอสักครู่ ระบบกำลังจัดเก็บข้อมูล',
+                icon: 'info',
+                allowOutsideClick: false,
+                showConfirmButton: false,
+                didOpen: () => { Swal.showLoading(); }
+            });
+
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify(payload)
+                });
+                const res = await response.json();
+                
+                if (res.success) {
+                    Swal.fire({ 
+                        icon: 'success', 
+                        title: 'บันทึกสำเร็จ', 
+                        text: 'เพิ่มข้อมูลเรียบร้อยแล้ว', 
+                        timer: 2000, 
+                        showConfirmButton: false 
+                    });
+                    document.getElementById('stockForm').reset();
+                    toggleFields();
+                    toggleCustomCategory();
+                } else {
+                    Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: res.message });
+                }
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'การเชื่อมต่อขัดข้อง', text: err.message });
+            }
+        }
+
+        async function loadHistory() {
+            document.getElementById('historyGrid').innerHTML = '';
+            document.getElementById('loadingHistory').classList.remove('hidden');
+            
+            try {
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ action: "getItems" })
+                });
+                const res = await response.json();
+                document.getElementById('loadingHistory').classList.add('hidden');
+                
+                if (res.success) {
+                    historyData = res.data;
+                    updateFilterOptions();
+                    renderHistory();
+                }
+            } catch (err) {
+                document.getElementById('loadingHistory').classList.add('hidden');
+                Swal.fire({ icon: 'error', title: 'ดึงข้อมูลไม่สำเร็จ', text: err.message });
+            }
+        }
+
+        function updateFilterOptions() {
+            const filter = document.getElementById('filterCategory');
+            const categories = [...new Set(historyData.map(item => item.Category))];
+            
+            filter.innerHTML = '<option value="all">ทุกหมวดหมู่</option>';
+            categories.forEach(cat => {
+                if(cat) filter.innerHTML += `<option value="${cat}">${cat}</option>`;
+            });
+        }
+
+        function renderHistory() {
+            const filterValue = document.getElementById('filterCategory').value;
+            const grid = document.getElementById('historyGrid');
+            grid.innerHTML = '';
+
+            const filteredData = filterValue === 'all' ? historyData : historyData.filter(item => item.Category === filterValue);
+
+            if (filteredData.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-gray-400 bg-white rounded-3xl border border-dashed border-soPink-200">
+                                    <div class="inline-flex items-center justify-center w-20 h-20 bg-soPink-50 text-soPink-300 rounded-full mb-4">
+                                        <i class="fa-solid fa-box-open text-4xl"></i>
+                                    </div>
+                                    <h3 class="text-xl font-semibold text-gray-600">ไม่มีข้อมูลรายการ</h3>
+                                    <p class="text-sm mt-1">ยังไม่มีสินค้าในหมวดหมู่นี้</p>
+                                  </div>`;
+                return;
+            }
+
+            filteredData.forEach(item => {
+                const isReady = item.Status === 'พร้อมขาย';
+                const isNormal = item.Status === 'ใช้งานปกติ';
+                
+                let statusBadge = '';
+                if(isReady) statusBadge = `<span class="bg-soCyan-100 text-soCyan-600 px-3 py-1 rounded-full text-xs font-semibold shadow-sm"><i class="fa-solid fa-box"></i> พร้อมขาย</span>`;
+                else if(isNormal) statusBadge = `<span class="bg-green-100 text-green-600 px-3 py-1 rounded-full text-xs font-semibold shadow-sm"><i class="fa-solid fa-check-circle"></i> ใช้งานปกติ</span>`;
+                else statusBadge = `<span class="bg-gray-200 text-gray-600 px-3 py-1 rounded-full text-xs font-semibold shadow-sm"><i class="fa-solid fa-rotate"></i> เคลมแล้ว</span>`;
+
+                let actionBtn = '';
+                if(isReady) {
+                    actionBtn = `<button onclick="markSold('${item.ID}', '${item.Duration}')" class="w-full mt-4 bg-soCyan-500 text-white hover:bg-soCyan-600 py-3 rounded-xl text-sm font-semibold transition shadow-md flex justify-center items-center gap-2"><i class="fa-solid fa-cart-shopping"></i> กดเปลี่ยนเป็นขายแล้ว</button>`;
+                } else if(isNormal) {
+                    actionBtn = `<button onclick="claimItem('${item.ID}')" class="w-full mt-4 bg-white border-2 border-soPink-400 text-soPink-500 hover:bg-soPink-400 hover:text-white py-2.5 rounded-xl text-sm font-semibold transition flex justify-center items-center gap-2"><i class="fa-solid fa-rotate"></i> แจ้งเคลมสินค้า</button>`;
+                } else {
+                    actionBtn = `<div class="mt-4 p-3 bg-gray-50 rounded-xl text-xs text-gray-500 border border-gray-200">
+                         <strong><i class="fa-solid fa-envelope-open-text text-gray-400"></i> อีเมลที่เคลมให้ลูกค้า:</strong><br><span class="text-gray-700 font-medium">${item.ClaimedEmail}</span>
+                       </div>`;
+                }
+
+                const expiryText = isReady ? `<span class="text-soCyan-600 font-medium">(เริ่มนับเมื่อกดขาย)</span>` : formatDate(item.ExpiryDate);
+
+                const card = `
+                    <div class="bg-white rounded-3xl shadow-sm border border-soPink-100 p-5 hover:shadow-lg transition duration-300 relative overflow-hidden group">
+                        <div class="absolute top-0 right-0 w-20 h-20 ${isReady ? 'bg-soCyan-50' : 'bg-soPink-50'} rounded-bl-full -z-0 transition-transform group-hover:scale-110"></div>
+                        
+                        <div class="flex justify-between items-start mb-4 relative z-10">
+                            <div>
+                                <h3 class="font-bold text-lg text-gray-800">${item.Category}</h3>
+                                <p class="text-xs ${isReady ? 'text-soCyan-600' : 'text-soPink-500'} font-medium bg-white px-2 py-1 rounded-md inline-block shadow-sm border border-gray-100 mt-1">
+                                    <i class="fa-solid fa-tag"></i> ${item.Type} &bull; ${item.Duration}
+                                </p>
+                            </div>
+                            ${statusBadge}
+                        </div>
+
+                        <div class="space-y-3 text-sm text-gray-600 relative z-10">
+                            <div class="flex items-center gap-3 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400"><i class="fa-solid fa-envelope"></i></div>
+                                <p class="truncate font-medium">${item.Email}</p>
+                            </div>
+                            
+                            ${item.Password && item.Password !== '-' ? `
+                            <div class="flex items-center gap-3 bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                                <div class="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-sm text-gray-400"><i class="fa-solid fa-key"></i></div>
+                                <p class="truncate font-medium">${item.Password}</p>
+                            </div>` : ''}
+                            
+                            ${item.Details && item.Details !== '-' ? `
+                            <p class="text-xs text-gray-500 px-1 pt-1"><i class="fa-solid fa-file-lines text-gray-400 mr-1"></i> ${item.Details}</p>` : ''}
+                            
+                            <div class="${isReady ? 'bg-soCyan-50/50' : 'bg-soPink-50/50'} p-3.5 rounded-xl mt-4 space-y-2 border ${isReady ? 'border-soCyan-100' : 'border-soPink-100'}">
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="text-gray-500"><i class="fa-regular fa-calendar-plus w-4 ${isReady ? 'text-soCyan-500' : 'text-soPink-400'}"></i> ${isReady ? 'วันที่นำเข้าสต๊อก' : 'วันที่เริ่มใช้งาน'}</span>
+                                    <span class="font-medium text-gray-700">${formatDate(item.DateAdded)}</span>
+                                </div>
+                                <div class="flex justify-between items-center text-xs">
+                                    <span class="font-medium ${isReady ? 'text-soCyan-600' : 'text-soPink-600'}"><i class="fa-regular fa-calendar-xmark w-4"></i> วันหมดอายุ</span>
+                                    <span class="font-semibold ${isReady ? 'text-soCyan-600' : 'text-soPink-600'}">${expiryText}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        ${actionBtn}
+                    </div>
+                `;
+                grid.innerHTML += card;
+            });
+        }
+
+        function markSold(id, durationStr) {
+            Swal.fire({
+                title: 'ยืนยันการขาย',
+                text: 'ระบบจะเปลี่ยนสถานะ และเริ่มนับวันหมดอายุใหม่ตั้งแต่วันนี้เป็นต้นไป',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#06b6d4',
+                confirmButtonText: '<i class="fa-solid fa-check"></i> ยืนยันขายเลย',
+                cancelButtonText: 'ยกเลิก'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'กำลังอัปเดตข้อมูล',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+
+                    const parts = durationStr.split(' ');
+                    const newDateAdded = new Date();
+                    const newExpiry = calculateExpiry(parts[0], parts[1]);
+
+                    try {
+                        const response = await fetch(API_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                            body: JSON.stringify({
+                                action: "markSold",
+                                id: id,
+                                newDateAdded: newDateAdded.toISOString(),
+                                newExpiryDate: newExpiry.toISOString()
+                            })
+                        });
+                        const res = await response.json();
+                        if(res.success){
+                            Swal.fire('สำเร็จ', 'สถานะเปลี่ยนเป็นใช้งานปกติ และเริ่มนับเวลาแล้ว', 'success');
+                            loadHistory(); 
+                        } else {
+                            Swal.fire('ข้อผิดพลาด', res.message, 'error');
+                        }
+                    } catch(err) {
+                        Swal.fire('ข้อผิดพลาด', err.message, 'error');
+                    }
+                }
+            });
+        }
+
+        function claimItem(id) {
+            Swal.fire({
+                title: 'แจ้งเคลมสินค้า',
+                text: 'กรุณากรอกอีเมลใหม่ที่ใช้สำหรับเคลมให้ลูกค้า',
+                input: 'email',
+                inputPlaceholder: 'ระบุอีเมลที่เคลม',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: '<i class="fa-solid fa-check"></i> ยืนยันการเคลม',
+                cancelButtonText: 'ยกเลิก',
+                inputValidator: (value) => {
+                    if (!value) return 'กรุณาระบุอีเมลด้วยครับ'
+                }
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'กำลังอัปเดตข้อมูล',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+
+                    try {
+                        const response = await fetch(API_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                            body: JSON.stringify({
+                                action: "updateClaim",
+                                id: id,
+                                claimedEmail: result.value
+                            })
+                        });
+                        const res = await response.json();
+                        if(res.success){
+                            Swal.fire('สำเร็จ', 'อัปเดตสถานะการเคลมเรียบร้อยแล้ว', 'success');
+                            loadHistory(); 
+                        } else {
+                            Swal.fire('ข้อผิดพลาด', res.message, 'error');
+                        }
+                    } catch(err) {
+                        Swal.fire('ข้อผิดพลาด', err.message, 'error');
+                    }
+                }
+            });
+        }
+
+        // โหลดค่าตั้งต้นเมื่อเปิดหน้าเว็บ
+        toggleFields();
+    </script>
+</body>
+</html>
